@@ -86,3 +86,27 @@ Built custom MCPs:
 - **excalidraw-scenes-py** (custom, `mcp-examples/excalidraw-scenes-py`, disabled by default) — Python FastMCP variant exposing similar scene-focused tools/resources; touches local scene files and local docs resource content; no secrets.
 
 See `docs/mcp/SECURITY.md` for the per-MCP threat model and `docs/mcp-testing/` for A/B test results.
+
+## Development Workflow
+
+- Start by reproducing the task in the smallest scope possible.
+- Prefer package-level changes in `packages/*` before app-level changes in `excalidraw-app/`.
+- Keep changes focused and atomic to simplify review.
+- Run typecheck and relevant tests before opening a PR.
+- Update docs when behavior, architecture, or MCP setup changes.
+
+## Testing and Validation
+
+- Minimum validation for non-trivial changes: `yarn test:typecheck`.
+- For app-facing behavior changes, run `yarn test:app`.
+- For repository hygiene, run `yarn test:all` before merge.
+- If snapshots are intentionally changed, run `yarn test:update`.
+- MCP-related changes should be validated by startup checks and A/B notes in `docs/mcp-testing/`.
+
+## PR and Review Guidelines
+
+- Keep PR description concise and task-focused.
+- Include a short test plan with exact commands executed.
+- Call out risks, migration notes, or compatibility constraints.
+- Prefer follow-up PRs over mixing unrelated refactors.
+- Ensure secrets remain local (`.cursor/mcp.json`) and never committed.
