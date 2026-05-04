@@ -43,17 +43,17 @@ Add one section per server below. A good entry covers: data accessed, secrets us
 
 ### excalidraw-scenes (custom)
 
-- **Data accessed:** reads `.excalidraw` files only (paths chosen by the agent, validated against the workspace).
+- **Data accessed:** reads `.excalidraw` files under configured roots (`examples`, `excalidraw-app`) and reads `dev-docs/README.md` for the docs resource.
 - **Secrets:** none.
 - **Trust:** local code, reviewed by the team.
-- **Mitigations:** path validation in the server; runs as a subprocess of the host; no network calls.
+- **Mitigations:** path validation in the server; root scoping via `EXCALIDRAW_MCP_ROOT` and `EXCALIDRAW_SCENE_ROOTS`; runs as a subprocess of the host; no network calls.
 
-### `<your-custom-mcp>`
+### excalidraw-scenes-py (custom, disabled by default)
 
-- **Data accessed:** ...
-- **Secrets:** ...
-- **Trust:** ...
-- **Mitigations:** ...
+- **Data accessed:** reads local `.excalidraw` scene files and serves a local documentation resource string.
+- **Secrets:** none.
+- **Trust:** local workshop code, but less hardened than the TypeScript version.
+- **Mitigations:** kept disabled by default in `.cursor/mcp.json.example`; use local-only paths; no network calls; enable only when needed.
 
 ## Incident response
 

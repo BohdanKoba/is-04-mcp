@@ -74,10 +74,15 @@ Available skills in this project (carried over from Day 3):
 
 This project uses MCP servers configured in `.cursor/mcp.json`. The committed file is `.cursor/mcp.json.example` — copy it to `.cursor/mcp.json` (gitignored) and fill in any secrets via environment variables.
 
-Add your MCPs here during the Day 4 workshop. Each entry should describe the server, the data it touches, and any required secrets.
+Connected public MCPs (pinned versions):
 
-- **filesystem** (public, `@modelcontextprotocol/server-filesystem`) — read-only access scoped to `./excalidraw-app` and `./examples`. No secrets.
-- **context7** (public, `@upstash/context7-mcp`) — fresh library docs as MCP resources. No secrets.
-- **<your-custom-mcp>** (custom, `mcp-examples/<name>/`) — purpose, tools exposed, data accessed, secrets used.
+- **filesystem** (public, `@modelcontextprotocol/server-filesystem@2025.10.20`) — local filesystem access restricted to `./excalidraw-app` and `./examples`; touches only files in those roots; no secrets.
+- **context7** (public, `@upstash/context7-mcp@2.1.8`) — fetches external library/framework docs for coding assistance; touches query terms + remote docs snippets; no secrets in current config.
+- **github** (public, `@modelcontextprotocol/server-github@2025.4.8`, disabled by default) — GitHub repo/issue/PR operations; touches GitHub API data for authorized repos; uses `${env:GH_PAT}` as token.
+
+Built custom MCPs:
+
+- **excalidraw-scenes-ts** (custom, `mcp-examples/excalidraw-scenes-ts`) — TypeScript MCP for `.excalidraw` scene workflows with tools `list_scenes`, `read_scene`, `extract_text` and resource `excalidraw://docs/dev-docs-readme`; touches local scene files and `dev-docs/README.md`; no secrets.
+- **excalidraw-scenes-py** (custom, `mcp-examples/excalidraw-scenes-py`, disabled by default) — Python FastMCP variant exposing similar scene-focused tools/resources; touches local scene files and local docs resource content; no secrets.
 
 See `docs/mcp/SECURITY.md` for the per-MCP threat model and `docs/mcp-testing/` for A/B test results.

@@ -24,7 +24,10 @@
     "excalidraw-scenes-ts": {
       "command": "node",
       "args": ["./mcp-examples/excalidraw-scenes-ts/dist/server.js"],
-      "disabled": true
+      "env": {
+        "EXCALIDRAW_MCP_ROOT": "${workspaceFolder}",
+        "EXCALIDRAW_SCENE_ROOTS": "examples,excalidraw-app"
+      }
     },
     "excalidraw-scenes-py": {
       "command": "uv",

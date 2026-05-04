@@ -12,7 +12,7 @@ Minimal MCP server that lets an AI agent work with `.excalidraw` files in the re
 
 ## Resource
 
-- `excalidraw://docs/architecture` — stub for `dev-docs/` (replace with a real reader during the workshop).
+- `excalidraw://docs/dev-docs-readme` — returns local `dev-docs/README.md`.
 
 ## Run locally
 
@@ -30,7 +30,11 @@ Already configured in [`.cursor/mcp.json.example`](../../.cursor/mcp.json.exampl
 ```json
 "excalidraw-scenes-ts": {
   "command": "node",
-  "args": ["./mcp-examples/excalidraw-scenes-ts/dist/server.js"]
+  "args": ["./mcp-examples/excalidraw-scenes-ts/dist/server.js"],
+  "env": {
+    "EXCALIDRAW_MCP_ROOT": "${workspaceFolder}",
+    "EXCALIDRAW_SCENE_ROOTS": "examples,excalidraw-app"
+  }
 }
 ```
 

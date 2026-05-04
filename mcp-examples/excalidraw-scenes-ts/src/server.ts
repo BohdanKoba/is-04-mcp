@@ -8,7 +8,7 @@
  *   - extract_text(path):     return all text-element strings from a scene
  *
  * Resource:
- *   - excalidraw://docs/architecture — exposes dev-docs/ as MCP resources (stub)
+ *   - excalidraw://docs/dev-docs-readme — returns dev-docs/README.md
  *
  * Run:
  *   npm install && npm run build
@@ -20,12 +20,38 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { readdir, readFile, stat } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 
 const server = new McpServer({
   name: "excalidraw-scenes",
   version: "0.1.0",
 });
+
+const workspaceRoot = resolve(process.env.EXCALIDRAW_MCP_ROOT ?? process.cwd());
+const allowedRoots = (process.env.EXCALIDRAW_SCENE_ROOTS ?? "examples,excalidraw-app")
+  .split(",")
+  .map((root) => resolve(workspaceRoot, root.trim()))
+  .filter(Boolean);
+
+const devDocsReadme = resolve(workspaceRoot, "dev-docs/README.md");
+
+const isInside = (base: string, target: string) => {
+  const rel = relative(base, target);
+  return rel === "" || (!rel.startsWith("..") && !rel.includes(".."));
+};
+
+const resolveAndValidate = (userPath: string) => {
+  const absolutePath = resolve(workspaceRoot, userPath);
+  const allowed = allowedRoots.some((root) => isInside(root, absolutePath));
+  if (!allowed) {
+    throw new Error(
+      `Path is outside allowed roots. Allowed: ${allowedRoots
+        .map((root) => relative(workspaceRoot, root) || ".")
+        .join(", ")}`,
+    );
+  }
+  return absolutePath;
+};
 
 server.registerTool(
   "list_scenes",
@@ -40,18 +66,18 @@ server.registerTool(
     },
   },
   async ({ dir }) => {
-    const root = resolve(dir);
-    const stats = await stat(root).catch(() => null);
+    const absolutePath = resolveAndValidate(dir);
+    const stats = await stat(absolutePath).catch(() => null);
     if (!stats || !stats.isDirectory()) {
       return {
         content: [{ type: "text", text: `Directory not found: ${dir}` }],
         isError: true,
       };
     }
-    const entries = await readdir(root, { withFileTypes: true });
+    const entries = await readdir(absolutePath, { withFileTypes: true });
     const scenes = entries
       .filter((e) => e.isFile() && e.name.endsWith(".excalidraw"))
-      .map((e) => join(dir, e.name));
+      .map((e) => join(relative(workspaceRoot, absolutePath), e.name));
     return {
       content: [
         {
@@ -74,7 +100,8 @@ server.registerTool(
     },
   },
   async ({ path }) => {
-    const raw = await readFile(path, "utf8");
+    const absolutePath = resolveAndValidate(path);
+    const raw = await readFile(absolutePath, "utf8");
     const parsed = JSON.parse(raw);
     return {
       content: [{ type: "text", text: JSON.stringify(parsed, null, 2) }],
@@ -93,7 +120,8 @@ server.registerTool(
     },
   },
   async ({ path }) => {
-    const raw = await readFile(path, "utf8");
+    const absolutePath = resolveAndValidate(path);
+    const raw = await readFile(absolutePath, "utf8");
     const scene = JSON.parse(raw) as { elements?: Array<{ type: string; text?: string }> };
     const texts = (scene.elements ?? [])
       .filter((el) => el.type === "text" && typeof el.text === "string")
@@ -105,23 +133,19 @@ server.registerTool(
 );
 
 server.registerResource(
-  "architecture-docs",
-  "excalidraw://docs/architecture",
+  "dev-docs-readme",
+  "excalidraw://docs/dev-docs-readme",
   {
-    title: "Excalidraw architecture docs",
-    description:
-      "Stub resource — replace this with a real dev-docs/ reader during the workshop.",
+    title: "Excalidraw dev docs README",
+    description: "Returns the contents of dev-docs/README.md from this workspace.",
     mimeType: "text/markdown",
   },
-  async (uri) => ({
-    contents: [
-      {
-        uri: uri.href,
-        mimeType: "text/markdown",
-        text: "# Excalidraw architecture\n\nReplace this stub with content from dev-docs/.",
-      },
-    ],
-  }),
+  async (uri) => {
+    const text = await readFile(devDocsReadme, "utf8");
+    return {
+      contents: [{ uri: uri.href, mimeType: "text/markdown", text }],
+    };
+  },
 );
 
 const transport = new StdioServerTransport();
