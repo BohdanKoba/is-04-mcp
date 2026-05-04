@@ -1,4 +1,4 @@
-## MCP Test: excalidraw-scenes-ts
+# MCP Test: excalidraw-scenes-ts
 
 ### Prompt
 "Use the `excalidraw-scenes-ts` MCP to list `.excalidraw` files in `examples/`, then read the first file and extract all text labels from it."

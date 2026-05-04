@@ -20,7 +20,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { readdir, readFile, stat } from "node:fs/promises";
-import { join, relative, resolve } from "node:path";
+import { relative, resolve } from "node:path";
 
 const server = new McpServer({
   name: "excalidraw-scenes",
@@ -53,6 +53,29 @@ const resolveAndValidate = (userPath: string) => {
   return absolutePath;
 };
 
+const listSceneFilesRecursive = async (baseDir: string) => {
+  const sceneFiles: string[] = [];
+  const dirsToVisit = [baseDir];
+
+  while (dirsToVisit.length > 0) {
+    const currentDir = dirsToVisit.pop();
+    if (!currentDir) {
+      continue;
+    }
+    const entries = await readdir(currentDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const entryPath = resolve(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        dirsToVisit.push(entryPath);
+      } else if (entry.isFile() && entry.name.endsWith(".excalidraw")) {
+        sceneFiles.push(entryPath);
+      }
+    }
+  }
+
+  return sceneFiles;
+};
+
 server.registerTool(
   "list_scenes",
   {
@@ -74,10 +97,8 @@ server.registerTool(
         isError: true,
       };
     }
-    const entries = await readdir(absolutePath, { withFileTypes: true });
-    const scenes = entries
-      .filter((e) => e.isFile() && e.name.endsWith(".excalidraw"))
-      .map((e) => join(relative(workspaceRoot, absolutePath), e.name));
+    const sceneFiles = await listSceneFilesRecursive(absolutePath);
+    const scenes = sceneFiles.map((filePath) => relative(workspaceRoot, filePath));
     return {
       content: [
         {
@@ -100,12 +121,19 @@ server.registerTool(
     },
   },
   async ({ path }) => {
-    const absolutePath = resolveAndValidate(path);
-    const raw = await readFile(absolutePath, "utf8");
-    const parsed = JSON.parse(raw);
-    return {
-      content: [{ type: "text", text: JSON.stringify(parsed, null, 2) }],
-    };
+    try {
+      const absolutePath = resolveAndValidate(path);
+      const raw = await readFile(absolutePath, "utf8");
+      const parsed = JSON.parse(raw);
+      return {
+        content: [{ type: "text", text: JSON.stringify(parsed, null, 2) }],
+      };
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{ type: "text", text: `Failed to read scene at ${path}: ${String(error)}` }],
+      };
+    }
   },
 );
 
@@ -120,15 +148,22 @@ server.registerTool(
     },
   },
   async ({ path }) => {
-    const absolutePath = resolveAndValidate(path);
-    const raw = await readFile(absolutePath, "utf8");
-    const scene = JSON.parse(raw) as { elements?: Array<{ type: string; text?: string }> };
-    const texts = (scene.elements ?? [])
-      .filter((el) => el.type === "text" && typeof el.text === "string")
-      .map((el) => el.text as string);
-    return {
-      content: [{ type: "text", text: texts.length ? texts.join("\n") : "(no text)" }],
-    };
+    try {
+      const absolutePath = resolveAndValidate(path);
+      const raw = await readFile(absolutePath, "utf8");
+      const scene = JSON.parse(raw) as { elements?: Array<{ type: string; text?: string }> };
+      const texts = (scene.elements ?? [])
+        .filter((el) => el.type === "text" && typeof el.text === "string")
+        .map((el) => el.text as string);
+      return {
+        content: [{ type: "text", text: texts.length ? texts.join("\n") : "(no text)" }],
+      };
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{ type: "text", text: `Failed to extract text from ${path}: ${String(error)}` }],
+      };
+    }
   },
 );
 

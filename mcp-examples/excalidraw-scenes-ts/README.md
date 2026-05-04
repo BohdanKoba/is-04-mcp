@@ -25,7 +25,7 @@ npm start
 
 ## Wire into Cursor
 
-Already configured in [`.cursor/mcp.json.example`](../../.cursor/mcp.json.example) (set `disabled: false` to enable):
+Already configured in [`.cursor/mcp.json.example`](../../.cursor/mcp.json.example) and enabled by default (no `disabled` flag is set for `excalidraw-scenes-ts`):
 
 ```json
 "excalidraw-scenes-ts": {
@@ -38,7 +38,7 @@ Already configured in [`.cursor/mcp.json.example`](../../.cursor/mcp.json.exampl
 }
 ```
 
-After enabling, reload Cursor and confirm the server appears green in the MCP panel.
+Reload Cursor and confirm the server appears green in the MCP panel.
 
 ## Test prompts
 
